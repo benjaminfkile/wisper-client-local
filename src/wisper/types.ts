@@ -38,6 +38,12 @@ export interface CreateLeaseRequest {
   network?: WisperNetwork
   resources?: LeaseResources
   userdata?: string
+  /**
+   * Optional environment variables forwarded to the container (e.g.
+   * `CLAUDE_CODE_OAUTH_TOKEN`). Sent verbatim in the request body. NOTE: these
+   * travel as plaintext to the dev harness — local/trusted use only.
+   */
+  env?: Record<string, string>
 }
 
 /** `201` response from `POST /dev/leases`. There is no per-lease token. */

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Dialog from '@mui/material/Dialog'
 import DialogTitle from '@mui/material/DialogTitle'
 import DialogContent from '@mui/material/DialogContent'
@@ -9,6 +9,11 @@ import Button from '@mui/material/Button'
 import Alert from '@mui/material/Alert'
 import Box from '@mui/material/Box'
 import Stack from '@mui/material/Stack'
+import IconButton from '@mui/material/IconButton'
+import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
+import AddIcon from '@mui/icons-material/Add'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import { useLeases } from '../hooks/useLeases'
 import { useSettings } from '../hooks/useSettings'
 import { WisperError } from '../wisper/client'
@@ -22,6 +27,13 @@ interface CreateLeaseDialogProps {
 }
 
 type Unit = 'seconds' | 'minutes' | 'hours'
+
+/** One row of the environment-variable editor, with a stable id for React keys. */
+interface EnvRow {
+  id: number
+  key: string
+  value: string
+}
 
 const UNIT_SECONDS: Record<Unit, number> = {
   seconds: 1,
@@ -69,8 +81,24 @@ export default function CreateLeaseDialog({
   const [memoryMb, setMemoryMb] = useState('')
   const [pids, setPids] = useState('')
   const [userdata, setUserdata] = useState('')
+  const [envRows, setEnvRows] = useState<EnvRow[]>([])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Monotonic id source for env rows, so keys stay stable across add/remove.
+  const nextEnvId = useRef(0)
+
+  function addEnvRow() {
+    setEnvRows((rows) => [...rows, { id: nextEnvId.current++, key: '', value: '' }])
+  }
+
+  function removeEnvRow(id: number) {
+    setEnvRows((rows) => rows.filter((r) => r.id !== id))
+  }
+
+  function updateEnvRow(id: number, fields: Partial<Pick<EnvRow, 'key' | 'value'>>) {
+    setEnvRows((rows) => rows.map((r) => (r.id === id ? { ...r, ...fields } : r)))
+  }
 
   // Prefill the image from settings each time the dialog opens.
   useEffect(() => {
@@ -98,6 +126,7 @@ export default function CreateLeaseDialog({
     setMemoryMb('')
     setPids('')
     setUserdata('')
+    setEnvRows([])
     setError(null)
     setSubmitting(false)
   }
@@ -128,6 +157,15 @@ export default function CreateLeaseDialog({
     if (pidsNum !== undefined) resources.pids = pidsNum
     const hasResources = Object.keys(resources).length > 0
 
+    // Build env from rows whose key is non-empty; a later row wins on collision.
+    // Omit `env` entirely when no row contributes a key.
+    const env: Record<string, string> = {}
+    for (const row of envRows) {
+      const key = row.key.trim()
+      if (key !== '') env[key] = row.value
+    }
+    const hasEnv = Object.keys(env).length > 0
+
     setSubmitting(true)
     setError(null)
     try {
@@ -138,6 +176,7 @@ export default function CreateLeaseDialog({
         network,
         resources: hasResources ? resources : undefined,
         userdata: userdata.trim() ? userdata : undefined,
+        env: hasEnv ? env : undefined,
       })
       reset()
       onClose()
@@ -283,6 +322,71 @@ export default function CreateLeaseDialog({
             autoComplete="off"
             slotProps={{ htmlInput: { style: { fontFamily: 'inherit' } } }}
           />
+
+          <Box sx={{ mt: 2 }}>
+            <Stack
+              direction="row"
+              sx={{
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                mb: envRows.length > 0 ? 1 : 0,
+              }}
+            >
+              <Tooltip title="Forwarded to the container (e.g. CLAUDE_CODE_OAUTH_TOKEN). Values are hidden here but still sent as plaintext on the wire.">
+                <Typography variant="subtitle2" color="text.secondary">
+                  Environment variables (optional)
+                </Typography>
+              </Tooltip>
+              <Button
+                size="small"
+                startIcon={<AddIcon />}
+                onClick={addEnvRow}
+              >
+                Add
+              </Button>
+            </Stack>
+
+            {envRows.map((row) => (
+              <Stack
+                key={row.id}
+                direction="row"
+                spacing={1}
+                sx={{ alignItems: 'flex-start', mb: 1 }}
+              >
+                <TextField
+                  label="Key"
+                  value={row.key}
+                  onChange={(e) => updateEnvRow(row.id, { key: e.target.value })}
+                  placeholder="CLAUDE_CODE_OAUTH_TOKEN"
+                  size="small"
+                  spellCheck={false}
+                  autoComplete="off"
+                  sx={{ flex: 1 }}
+                />
+                <Tooltip title="Hidden here for shoulder-surfing, but still sent as plaintext on the wire.">
+                  <TextField
+                    label="Value"
+                    type="password"
+                    value={row.value}
+                    onChange={(e) => updateEnvRow(row.id, { value: e.target.value })}
+                    size="small"
+                    spellCheck={false}
+                    autoComplete="off"
+                    sx={{ flex: 1 }}
+                  />
+                </Tooltip>
+                <Tooltip title="Remove variable">
+                  <IconButton
+                    aria-label="Remove environment variable"
+                    onClick={() => removeEnvRow(row.id)}
+                    sx={{ mt: 0.5 }}
+                  >
+                    <DeleteOutlineIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Stack>
+            ))}
+          </Box>
         </Box>
       </DialogContent>
       <DialogActions>

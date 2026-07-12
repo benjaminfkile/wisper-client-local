@@ -60,8 +60,13 @@ Unauthenticated liveness. A DB-less (tunnel-only) boot still reports `ok`.
 ### `POST /dev/leases`
 
 Create and drive a lease on a host. `hostId` and `ttl_seconds` are required;
-`image`, `network`, `resources`, and `userdata` are optional. `network` defaults
-to `none`.
+`image`, `network`, `resources`, `userdata`, and `env` are optional. `network`
+defaults to `none`.
+
+`env` is an optional object of string key/value pairs forwarded to the
+container's environment (e.g. `CLAUDE_CODE_OAUTH_TOKEN`). Omit it entirely when
+there are no variables — the client never sends an empty `env` object or empty
+keys.
 
 ```json
 {
@@ -70,9 +75,14 @@ to `none`.
   "image": "wisp-base",
   "network": "none",
   "resources": { "cpus": 2, "memory_mb": 2048, "pids": 256 },
-  "userdata": "#!/bin/sh\n…"
+  "userdata": "#!/bin/sh\n…",
+  "env": { "CLAUDE_CODE_OAUTH_TOKEN": "sk-…", "FOO": "bar" }
 }
 ```
+
+> TODO (harden): `env` is sent as plaintext to the dev harness (v1,
+> local/trusted use); production must deliver these as secrets, not plaintext
+> env.
 
 Response `201` — note there is **no token**:
 

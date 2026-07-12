@@ -1,0 +1,5 @@
+/*
+ * Global styles are handled by MUI's <CssBaseline /> and the dark theme in
+ * src/theme.ts. Component styling should use MUI components and the `sx` prop
+ * rather than hand-rolled CSS here. Keep this file minimal.
+ */

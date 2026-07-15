@@ -102,6 +102,16 @@ export default function LeaseOverview({ lease }: { lease: TrackedLease }) {
             <Divider flexItem />
             <Field label="Host">{lease.hostId}</Field>
             <Field label="Image">{lease.image || 'default'}</Field>
+            {lease.os && (
+              <Field label="OS">
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={lease.os}
+                  sx={{ textTransform: 'none' }}
+                />
+              </Field>
+            )}
             {lease.network && <Field label="Network">{lease.network}</Field>}
             {lease.wispContractId && (
               <Field label="wisp contract" mono>

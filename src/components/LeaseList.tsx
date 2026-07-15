@@ -112,6 +112,14 @@ function LeaseCard({ lease }: { lease: TrackedLease }) {
                 color={STATUS_COLOR[lease.status]}
                 label={lease.status}
               />
+              {lease.os && (
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  label={lease.os}
+                  sx={{ textTransform: 'none' }}
+                />
+              )}
             </Stack>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               host:{' '}

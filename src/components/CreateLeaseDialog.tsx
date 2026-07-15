@@ -313,7 +313,11 @@ export default function CreateLeaseDialog({
             label="Userdata (optional)"
             value={userdata}
             onChange={(e) => setUserdata(e.target.value)}
-            placeholder={'#!/bin/sh\n# provisioning script run at boot'}
+            placeholder={
+              '#!/bin/sh provisioning script (Linux images)\n' +
+              'or cmd/PowerShell commands (Windows images)\n' +
+              '# run at boot'
+            }
             fullWidth
             multiline
             minRows={3}

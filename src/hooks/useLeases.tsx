@@ -12,6 +12,7 @@ import * as wisper from '../wisper/client'
 import { WisperError } from '../wisper/client'
 import type {
   CreateLeaseRequest,
+  LeaseOs,
   LeaseStatus,
   WisperNetwork,
 } from '../wisper/types'
@@ -39,6 +40,11 @@ export interface TrackedLease {
   image?: string
   /** The network mode the lease was created with. */
   network?: WisperNetwork
+  /**
+   * OS family of the leased image, from the create response. Absent/`null`
+   * means the wisper-api didn't report one — treated as unknown by the UI.
+   */
+  os?: LeaseOs
   ttl_seconds: number
   /** Client clock (`Date.now()`) at creation. */
   created_at: number
@@ -138,6 +144,7 @@ export function LeasesProvider({ children }: { children: ReactNode }) {
         hostId: req.hostId,
         image: req.image || undefined,
         network: req.network,
+        os: res.os ?? null,
         ttl_seconds: req.ttl_seconds,
         created_at: Date.now(),
         status: res.status === 'released' || res.status === 'expired' ? res.status : 'ready',

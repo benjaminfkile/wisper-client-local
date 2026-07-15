@@ -17,6 +17,7 @@ import ClearAllIcon from '@mui/icons-material/ClearAll'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import CheckIcon from '@mui/icons-material/Check'
 import { execSync, WisperError } from '../wisper/client'
+import { execSuggestionsFor } from '../wisper/osExec'
 import { useExecStream } from '../hooks/useExecStream'
 import type { TrackedLease } from '../hooks/useLeases'
 
@@ -26,9 +27,6 @@ const MONO =
 
 /** Cap the retained output so a chatty stream can't grow memory unbounded. */
 const MAX_OUTPUT_CHARS = 256 * 1024
-
-/** A couple of harmless commands to prefill the input from. */
-const QUICK_COMMANDS = ['pwd', 'ls -la', 'uname -a', 'env']
 
 /** Run either a single buffered exec or a live streaming one. */
 type ExecMode = 'sync' | 'stream'
@@ -69,6 +67,10 @@ export default function ExecPanel({ lease }: { lease: TrackedLease }) {
 
   const segIdRef = useRef(0)
   const outputRef = useRef<HTMLDivElement | null>(null)
+
+  // Quick commands and input placeholder track the lease's OS (Windows gets
+  // cmd-style hints; Linux/unknown keep the original Linux flavour).
+  const { quickCommands, placeholder } = execSuggestionsFor(lease.os)
 
   const ended =
     lease.ended === true ||
@@ -197,7 +199,7 @@ export default function ExecPanel({ lease }: { lease: TrackedLease }) {
       )}
 
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-        {QUICK_COMMANDS.map((qc) => (
+        {quickCommands.map((qc) => (
           <Button
             key={qc}
             size="small"
@@ -223,7 +225,7 @@ export default function ExecPanel({ lease }: { lease: TrackedLease }) {
           maxRows={6}
           size="small"
           label="Command"
-          placeholder="e.g. cd /tmp && ls -la"
+          placeholder={placeholder}
           value={command}
           onChange={(e) => setCommand(e.target.value)}
           onKeyDown={onKeyDown}

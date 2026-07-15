@@ -18,6 +18,13 @@ export type LeaseStatus = 'ready' | 'released' | 'expired'
 /** Network mode for a lease's container (wisp's `limits.networks`). */
 export type WisperNetwork = 'none' | 'open' | 'egress'
 
+/**
+ * OS family of a lease's container image, as reported by the create response.
+ * `null` (or absent, on an older wisper-api) means the host didn't tell us —
+ * the console treats that as unknown and falls back to Linux-flavoured hints.
+ */
+export type LeaseOs = 'linux' | 'windows' | null
+
 /** Optional per-lease resource caps forwarded to wisp via the tunnel. */
 export interface LeaseResources {
   cpus?: number
@@ -51,6 +58,11 @@ export interface CreateLeaseResponse {
   leaseId: string
   wispContractId: string
   status: LeaseStatus
+  /**
+   * OS family of the leased image (`'linux'` | `'windows'` | `null`). Absent on
+   * an older wisper-api that predates this field — treated as unknown.
+   */
+  os?: LeaseOs
 }
 
 /** Body for `POST /dev/leases/:id/exec` — the host is named per call. */
